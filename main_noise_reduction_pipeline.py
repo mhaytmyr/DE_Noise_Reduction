@@ -13,7 +13,20 @@ print(de_images_roi.shape)
 #### TODO: Call noise reduction algorithm
 ## noise_reduction_algo1, noise_reduction_algo2 etc.
 
-de_roi_std = variance_analysis(de_images_roi)
+#de_roi_std = variance_analysis(de_images_roi)
+
+patch_nps = power_spectral_analysis(de_images_roi)
+
+radial_profile = nps_radial_profile(patch_nps)
+
+fig,axes = plt.subplots(ncols=2,figsize=(12,8))
+ax = axes.ravel()
+
+ax[0].imshow(patch_nps,cmap="gray")
+ax[1].plot(radial_profile,"b*")
+# ax[1].set_yscale("log", nonposy='clip')
+plt.show()
+
 
 # for i in range(de_images_roi.shape[0]):
 #     de_img = de_images_roi[i,:,:]

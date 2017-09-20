@@ -8,6 +8,7 @@ This function will return all images as one ndarray and apply region of interest
 
 '''
 
+
 def apply_log_subtraction(low,high,weight=0.5):
     de_img = np.exp(-(np.log(high)-weight*np.log(low)))
     de_img_norm = (2**16-1)*(de_img-de_img.min())/(de_img.max()-de_img.min())
