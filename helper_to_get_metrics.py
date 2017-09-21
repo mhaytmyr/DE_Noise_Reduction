@@ -33,7 +33,8 @@ Uy = 0.388;# y-pixel in mm
 
 def power_spectral_analysis(patch_of_roi):
     #lineraize image
-    patch_roi_norm = np.log(patch_of_roi.copy())
+    #following is important to remove errors ins log
+    patch_roi_norm = np.log(patch_of_roi.copy().clip(patch_of_roi<=0))
 
     N,row,col = patch_of_roi.shape
     Size = row*col
@@ -41,15 +42,16 @@ def power_spectral_analysis(patch_of_roi):
     patch_nps = np.zeros((row,col))
     #initially remove mean from each selected roi
     for i in range(N):
-        patch_roi_norm[i,:,:] = patch_roi_norm[i,:,:]-patch_roi_norm[i,:,:].mean()
+
+        patch_roi_norm[i,:,:] = patch_of_roi[i,:,:]-patch_of_roi[i,:,:].mean()
 
         #now perform fourier transform for each patch
         f = np.fft.fft2(patch_roi_norm[i,:,:])
         fshift = np.fft.fftshift(f)
 
         #from the paper
-        # patch_nps += abs(fshift**2)*(Ux*Uy/Size)
-        patch_nps += 20*np.log(np.abs(fshift)*(Ux*Uy/Size))
+        patch_nps += abs(fshift**2)*(Ux*Uy/Size)
+        # patch_nps += 20*np.log(np.abs(fshift)*(Ux*Uy/Size))
 
         #here is how you do inverse transform
         # rows, cols = img.shape
