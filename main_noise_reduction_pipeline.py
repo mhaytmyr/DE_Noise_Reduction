@@ -12,6 +12,7 @@ print(lo_images_combined.shape, hi_images_combined.shape)
 lo_images_roi, hi_images_roi = choose_region_of_interest(lo_images_combined,hi_images_combined)
 print(lo_images_roi.shape, hi_images_roi.shape)
 
+
 ###Add random noise
 # de_images_roi = add_random_noise(de_images_roi)
 
@@ -35,18 +36,25 @@ de_images_roi = apply_log_subtraction(lo_images_roi,hi_images_noise)
 patch_nps = power_spectral_analysis(de_images_roi)
 median_radial_profile = nps_radial_profile(patch_nps)
 
+### Run noise clipping algorithm
+hi_images_noise = noise_clipping_filter(lo_images_roi,hi_images_roi)
+de_images_roi = apply_log_subtraction(lo_images_roi,hi_images_noise)
+patch_nps = power_spectral_analysis(de_images_roi)
+noc_radial_profile = nps_radial_profile(patch_nps)
+
 # #de_roi_std = variance_analysis(de_images_roi)
 
 fig,axes = plt.subplots(ncols=2,figsize=(12,8))
 ax = axes.ravel()
 
-ax[0].imshow(patch_nps,cmap="gray")
+ax[0].imshow(de_images_roi[0],cmap="gray")
 ax[1].plot(img_radial_profile,"b*",label="Original Image")
 ax[1].plot(gauss_radial_profile,"g^",label="Gaussian Image")
 ax[1].plot(median_radial_profile,"ro",label="Median Image")
+ax[1].plot(noc_radial_profile,"k.",label="NOC Image")
 ax[1].legend(loc="best")
 ax[1].set_yscale("log", nonposy='clip')
-ax[1].set_xlim(left=5)
+ax[1].set_xlim(left=1)
 
 plt.show()
 
