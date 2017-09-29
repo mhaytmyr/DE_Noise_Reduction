@@ -103,6 +103,48 @@ def noise_clipping_filter(lo_images_roi,hi_images_roi,apply_log=True):
 
     return np.array(high_images)
 
+import keras as K
+from keras.backend import tf as ktf
+from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import MaxPooling2D, UpSampling2D, Conv2D
+from keras.layers import Lambda, Input
+from keras.models import Model
+
+def auto_encoder_model(de_image_roi,down_kernel=3,up_kernel=3):
+    H,W = de_image_roi.shape
+    input_img = Input(shape=(H,W,1))
+
+    x = Conv2D(80, (down_kernel, down_kernel), activation='relu', padding='same')(input_img)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Conv2D(1, (up_kernel,up_kernel), activation='relu', padding='same')(x)
+    decoded = UpSampling2D((2,2))(x)
+    decoded = Lambda(lambda image: ktf.image.resize_images(image, (H,W)))(x)
+
+    autoencoder = Model(input_img, decoded)
+    autoencoder.compile(optimizer='sgd', loss='mean_absolute_error')
+
+    X = de_image_roi.copy()/(2**16-1)
+    # X = np.log(img.copy()+1)
+
+    hist = autoencoder.fit(X[np.newaxis,:,:,np.newaxis], X[np.newaxis,:,:,np.newaxis],
+                batch_size=10, epochs=80, verbose=0)
+    X_filtered = autoencoder.predict(X[np.newaxis,:,:,np.newaxis])*(2**16-1)
+    print(X_filtered.shape)
+
+    return hist,X_filtered[0,:,:,0]
+
+
+def cnn_filter(de_images_roi):
+    N = de_images_roi.shape[0]
+    de_images_noise = de_images_roi.copy()
+
+    for i in range(N):
+        print("Running image ",i)
+        _, filtered = auto_encoder_model(de_images_roi[i,:,:])
+        de_images_noise[i,:,:] = filtered
+
+    return de_images_noise
+
 def add_random_noise(de_images_roi):
     M,N,K = de_images_roi.shape
     de_images_noise = de_images_roi.copy()
