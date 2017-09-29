@@ -28,7 +28,7 @@ de_images = apply_log_subtraction(lo_images_roi,hi_images_roi)
 de_images_noise = cnn_filter(de_images)
 patch_nps = power_spectral_analysis(de_images_noise)
 cnn_radial_profile = nps_radial_profile(patch_nps)
-# cnn_de_images = cnn_filter(apply_log_subtraction(lo_images_combined[0:1],hi_images_combined[0:1]))
+cnn_de_images = cnn_filter(apply_log_subtraction(lo_images_combined[0:1],hi_images_combined[0:1]))
 
 #### Run gaussin filter and get NPs profile
 ## Noise reduction is applied to High image only
@@ -56,28 +56,28 @@ noc_de_images = apply_log_subtraction(lo_images_combined[0:1],
 
 # #de_roi_std = variance_analysis(de_images_roi)
 
-fig,axes = plt.subplots(ncols=2,figsize=(12,8))
-ax = axes.ravel()
+# fig,axes = plt.subplots(ncols=2,figsize=(12,8))
+# ax = axes.ravel()
 
-ax[0].imshow(de_images_roi[0],cmap="gray")
-ax[1].plot(img_radial_profile,"b*",label="Original Image")
-ax[1].plot(gauss_radial_profile,"g^",label="Gaussian Image")
-ax[1].plot(median_radial_profile,"ro",label="Median Image")
-ax[1].plot(noc_radial_profile,"k.",label="NOC Image")
-ax[1].plot(cnn_radial_profile,"c>",label="CNN Image")
-ax[1].legend(loc="best")
-ax[1].set_yscale("log", nonposy='clip')
-ax[1].set_xlim(left=5)
+# ax[0].imshow(de_images_roi[0],cmap="gray")
+# ax[1].plot(img_radial_profile,"b*",label="Original Image")
+# ax[1].plot(gauss_radial_profile,"g^",label="Gaussian Image")
+# ax[1].plot(median_radial_profile,"ro",label="Median Image")
+# ax[1].plot(noc_radial_profile,"k.",label="NOC Image")
+# ax[1].plot(cnn_radial_profile,"c>",label="CNN Image")
+# ax[1].legend(loc="best")
+# ax[1].set_yscale("log", nonposy='clip')
+# ax[1].set_xlim(left=5)
 
-plt.show()
+#plt.show()
 
 fig,axes = plt.subplots(ncols=2,nrows=2,figsize=(15,12))
 ax = axes.ravel()
 
-ax[0].imshow(original_de_images[0],cmap="gray")
+ax[0].imshow(original_de_images,cmap="gray")
 ax[0].set_title("Original Image")
-# ax[1].imshow(cnn_de_images[0,:,:],cmap="gray")
-# ax[1].set_title("CNN Filter Image")
+ax[1].imshow(cnn_de_images[0,:,:],cmap="gray")
+ax[1].set_title("CNN Filter Image")
 ax[2].imshow(median_de_images[0],cmap="gray")
 ax[2].set_title("Median Filter Image")
 ax[3].imshow(noc_de_images[0],cmap="gray")

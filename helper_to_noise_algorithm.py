@@ -69,7 +69,7 @@ def noise_clipping_filter(lo_images_roi,hi_images_roi,apply_log=True):
 
             #now convert back images to normal
             clip_hi_tmp = (clip_hi_contrast.copy()+hi_bkg)
-            clip_hi_norm = (2**16-1)*clip_hi_tmp.copy()/(clip_hi_tmp.max()-clip_hi_tmp.min())
+            clip_hi_norm = (2**16-1)*(clip_hi_tmp)/(clip_hi_tmp.max()-clip_hi_tmp.min())
             # clip_hi_contrast = np.exp(clip_hi_contrast)
 
             high_images.append(clip_hi_norm)
@@ -127,9 +127,8 @@ def auto_encoder_model(de_image_roi,down_kernel=3,up_kernel=3):
     # X = np.log(img.copy()+1)
 
     hist = autoencoder.fit(X[np.newaxis,:,:,np.newaxis], X[np.newaxis,:,:,np.newaxis],
-                batch_size=10, epochs=80, verbose=0)
+                batch_size=10, epochs=80, verbose=1)
     X_filtered = autoencoder.predict(X[np.newaxis,:,:,np.newaxis])*(2**16-1)
-    print(X_filtered.shape)
 
     return hist,X_filtered[0,:,:,0]
 

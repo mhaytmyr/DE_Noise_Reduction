@@ -15,13 +15,11 @@ def apply_log_subtraction(low_files,high_files,weight=0.5):
     #if there is only one file
     if len(low_files.shape)==2:
         de_img = np.exp(-(np.log(high_files)-weight*np.log(low_files)))
-        # de_img_norm = (2**16-1)*(de_img-de_img.min())/(de_img.max()-de_img.min())
-        de_img_norm = (2**16-1)*(de_img)/(de_img.max()-de_img.min())
+        de_img_norm = (2**16-1)*(de_img-de_img.min())/(de_img.max()-de_img.min())
     else:
         for i in range(M):
             de_img = np.exp(-(np.log(high_files[i,:,:])-weight*np.log(low_files[i,:,:])))
-            # de_img_norm[i,:,:] = (2**16-1)*(de_img-de_img.min())/(de_img.max()-de_img.min())
-            de_img_norm[i,:,:] = (2**16-1)*(de_img)/(de_img.max()-de_img.min())
+            de_img_norm[i,:,:] = (2**16-1)*(de_img-de_img.min())/(de_img.max()-de_img.min())
 
     return de_img_norm
 
