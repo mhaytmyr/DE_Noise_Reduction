@@ -21,6 +21,20 @@ def sigmoid_normalization(img,min_new=0,max_new=2**16-1,power=-1):
     img_norm = (max_new-min_new)*(1+np.exp(-(img-beta)/alpha))**power+min_new
     return img_norm
 
+def select_region_of_interest(de_images,roi_region):
+    M = de_images.shape[0]
+
+    de_images_roi = []
+    for i in range(M):
+        img_iter = de_images[i,:,:].copy()
+        roi_img = img_iter[roi_region[1]:roi_region[1]+roi_region[3], roi_region[0]:roi_region[0]+roi_region[2]]
+        de_images_roi.append(roi_img)
+
+    de_images_roi = np.array(de_images_roi)
+
+    return de_images_roi
+
+
 #open files and select region of interest
 def choose_region_of_interest(lo_images,hi_images):
     M = lo_images.shape[0]
@@ -49,5 +63,5 @@ def choose_region_of_interest(lo_images,hi_images):
     lo_images_roi = np.array(lo_images_roi)
     hi_images_roi = np.array(hi_images_roi)
 
-    return lo_images_roi, hi_images_roi
+    return lo_images_roi, hi_images_roi, roi_region
 

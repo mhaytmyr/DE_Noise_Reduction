@@ -27,8 +27,8 @@ def variance_analysis(patch_of_roi):
     return standard_dev
 
 #Image Plane Pixel Spacing
-Ux= 0.388; # x-pixel in mm
-Uy = 0.388;# y-pixel in mm
+Ux= 0.388*(100/150); # x-pixel in mm
+Uy = 0.388*(100/150);# y-pixel in mm
 #can also be accessed. dicom.read_fil("file.dcm").ImagePlanePixelSpacing
 
 def power_spectral_analysis(patch_of_roi):
@@ -69,11 +69,16 @@ def power_spectral_analysis(patch_of_roi):
     #finally divide by the number of patches
     patch_nps /= N
 
+    #normalize by maximim
+    # patch_nps /= 10e-10
+
     return patch_nps
 
 def nps_radial_profile(patch_nps, center=None):
 
     y, x = np.indices((patch_nps.shape))
+    y = y*Uy
+    x = x*Ux
 
     if not center:
         center = np.array([np.floor((x.max()-x.min())/2.0), np.floor((y.max()-y.min())/2.0)])

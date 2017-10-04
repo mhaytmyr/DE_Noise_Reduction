@@ -110,24 +110,40 @@ from keras.layers import MaxPooling2D, UpSampling2D, Conv2D
 from keras.layers import Lambda, Input
 from keras.models import Model
 
+
 def auto_encoder_model(de_image_roi,down_kernel=3,up_kernel=3):
     H,W = de_image_roi.shape
     input_img = Input(shape=(H,W,1))
 
-    x = Conv2D(80, (down_kernel, down_kernel), activation='relu', padding='same')(input_img)
+    x = Conv2D(64, (down_kernel, down_kernel), activation='relu', padding='same')(input_img)
     x = MaxPooling2D((2, 2), padding='same')(x)
+    print("Pool1 shape ",x.shape)
+
+    # x = Conv2D(64, (down_kernel, down_kernel), activation='relu', padding='same')(x)
+    # x = MaxPooling2D((2, 2), padding='same')(x)
+    # print("Pool2 shape ",x.shape)
+
+    # x = Conv2D(32, (up_kernel, up_kernel), activation='relu', padding='same')(x)
+    # x = MaxPooling2D((2, 2), padding='same')(x)
+    # print("Pool3 shape ",x.shape)
+
     x = Conv2D(1, (up_kernel,up_kernel), activation='relu', padding='same')(x)
     decoded = UpSampling2D((2,2))(x)
+    print("Pool4 shape ",decoded.shape)
+
     decoded = Lambda(lambda image: ktf.image.resize_images(image, (H,W)))(x)
 
+    # sgd = K.optimizers.SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
+    sgd = K.optimizers.RMSprop(lr=0.002, rho=0.9, epsilon=1e-08, decay=0.95)
+
     autoencoder = Model(input_img, decoded)
-    autoencoder.compile(optimizer='sgd', loss='mean_absolute_error')
+    autoencoder.compile(optimizer=sgd, loss='mean_absolute_error')
 
     X = de_image_roi.copy()/(2**16-1)
     # X = np.log(img.copy()+1)
 
     hist = autoencoder.fit(X[np.newaxis,:,:,np.newaxis], X[np.newaxis,:,:,np.newaxis],
-                batch_size=10, epochs=80, verbose=1)
+                batch_size=10, epochs=100, verbose=1)
     X_filtered = autoencoder.predict(X[np.newaxis,:,:,np.newaxis])*(2**16-1)
 
     return hist,X_filtered[0,:,:,0]
@@ -137,21 +153,36 @@ def cnn_filter(de_images_roi):
     N = de_images_roi.shape[0]
     de_images_noise = de_images_roi.copy()
 
-    for i in range(N):
-        print("Running image ",i)
-        _, filtered = auto_encoder_model(de_images_roi[i,:,:])
-        de_images_noise[i,:,:] = filtered
+    if len(de_images_roi.shape)==2:
+        _, filtered = auto_encoder_model(de_images_roi)
+        de_images_noise = filtered
+
+    else:
+        for i in range(N):
+            print("Running image ",i)
+            _, filtered = auto_encoder_model(de_images_roi[i,:,:])
+            de_images_noise[i,:,:] = filtered
 
     return de_images_noise
 
-def add_random_noise(de_images_roi):
+def add_random_noise(de_images_roi,noise_level):
     M,N,K = de_images_roi.shape
     de_images_noise = de_images_roi.copy()
 
     noise = np.zeros((N,K))
 
     for i in range(M):
-        de_images_noise[i,:,:] = cv2.randu(noise,0,10000)
+        # de_images_noise[i,:,:] = cv2.randu(noise,0,noise_level)
+        # cv2.randn(noise,0,noise_level)
+        cv2.randn(noise,0,noise_level)
+        de_images_noise[i,:,:] += noise.astype(np.uint16)
 
     return de_images_noise
+
+def create_sharp_edge_image(N,K):
+    sharp_image = np.zeros((N,K))
+
+    sharp_image[N//2:, :] = (2**16-1)
+
+    return np.array([sharp_image,sharp_image],np.uint16)
 
