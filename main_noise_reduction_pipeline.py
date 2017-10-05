@@ -19,10 +19,16 @@ patch_nps = power_spectral_analysis(de_images_roi)
 img_radial_profile = nps_radial_profile(patch_nps)
 original_de_images = apply_log_subtraction(lo_images_combined[0],hi_images_combined[0])
 
+### Run NPS for KCNR image
+kcnr_de_images  = correlated_noise_reduction(lo_images_combined,hi_images_combined)
+de_images_noise = select_region_of_interest(kcnr_de_images,roi_region)
+patch_nps = power_spectral_analysis(de_images_noise)
+kcnr_radial_profile = nps_radial_profile(patch_nps)
+
 
 ### Run auto-encoder
 # de_images = apply_log_subtraction(lo_images_roi,hi_images_roi)
-#de_images_noise = cnn_filter(de_images)
+# de_images_noise = cnn_filter(de_images)
 # cnn_de_images = cnn_filter(apply_log_subtraction(lo_images_combined[0:1],hi_images_combined[0:1]))
 cnn_de_images = cnn_filter(apply_log_subtraction(lo_images_combined,hi_images_combined))
 de_images_noise = select_region_of_interest(cnn_de_images,roi_region)
@@ -52,40 +58,44 @@ patch_nps = power_spectral_analysis(de_images_roi)
 noc_radial_profile = nps_radial_profile(patch_nps)
 noc_de_images = apply_log_subtraction(lo_images_combined[0:1],
     noise_clipping_filter(lo_images_combined[0:1],hi_images_combined[0:1]))
+noc_de_images = [cv2.bitwise_not(noc_de_images[i]) for i in range(noc_de_images.shape[0])]
 
-# #de_roi_std = variance_analysis(de_images_roi)
+# de_roi_std = variance_analysis(de_images_roi)
 
-fig,axes = plt.subplots(ncols=2,figsize=(12,8))
-ax = axes.ravel()
-
-ax[0].imshow(de_images_noise[0],cmap="gray")
-ax[1].plot(img_radial_profile,"b*",label="Original Image")
-ax[1].plot(gauss_radial_profile,"g^",label="Gaussian Image")
-ax[1].plot(median_radial_profile,"ro",label="Median Image")
-ax[1].plot(noc_radial_profile,"k.",label="NOC Image")
-ax[1].plot(cnn_radial_profile,"c>",label="CNN Image")
-ax[1].legend(loc="best")
-ax[1].set_yscale("log", nonposy='clip')
-ax[1].set_xlim(left=0,right=30)
-ax[1].set_xlabel("Spatial Frequency (cycles/mm)")
-ax[1].set_ylabel("NPS (mm^2) ")
-
-plt.show()
-
-# fig,axes = plt.subplots(ncols=2,nrows=2,figsize=(12,8))
+# fig,axes = plt.subplots(ncols=2,figsize=(12,8))
 # ax = axes.ravel()
 
-# ax[0].imshow(original_de_images,cmap="gray")
-# ax[0].set_title("Original Image")
-# ax[1].imshow(cnn_de_images[0,:,:],cmap="gray")
-# ax[1].set_title("CNN Filter Image")
-# ax[2].imshow(median_de_images[0],cmap="gray")
-# ax[2].set_title("Median Filter Image")
-# ax[3].imshow(noc_de_images[0],cmap="gray")
-# ax[3].set_title("Noise Clip Image")
-# # ax[4].imshow(gauss_de_images[0],cmap="gray")
-# # ax[4].set_title("Gaussian Filter Image")
+# ax[0].imshow(de_images_noise[0],cmap="gray")
+# ax[1].plot(img_radial_profile,"b*",label="Original Image")
+# ax[1].plot(gauss_radial_profile,"g^",label="Gaussian Image")
+# ax[1].plot(median_radial_profile,"ro",label="Median Image")
+# ax[1].plot(noc_radial_profile,"k.",label="NOC Image")
+# ax[1].plot(cnn_radial_profile,"c>",label="CNN Image")
+# ax[1].plot(kcnr_radial_profile,"ys",label="KSNR Image")
+# ax[1].legend(loc="best")
+# ax[1].set_yscale("log", nonposy='clip')
+# ax[1].set_xlim(left=0,right=30)
+# ax[1].set_xlabel("Spatial Frequency (cycles/mm)")
+# ax[1].set_ylabel("NPS (mm^2) ")
 
 # plt.show()
+
+fig,axes = plt.subplots(ncols=3,nrows=2,figsize=(12,8))
+ax = axes.ravel()
+
+ax[0].imshow(original_de_images,cmap="gray")
+ax[0].set_title("Original Image")
+ax[1].imshow(cnn_de_images[0,:,:],cmap="gray")
+ax[1].set_title("CNN Filter Image")
+ax[3].imshow(median_de_images[0],cmap="gray")
+ax[3].set_title("Median Filter Image")
+ax[2].imshow(noc_de_images[0],cmap="gray")
+ax[2].set_title("Noise Clip Image")
+ax[4].imshow(gauss_de_images[0],cmap="gray")
+ax[4].set_title("Gaussian Filter Image")
+ax[5].imshow(kcnr_de_images[0],cmap="gray")
+ax[5].set_title("Kalendar Correlated Noise Reduction")
+
+plt.show()
 
 
