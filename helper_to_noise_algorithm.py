@@ -14,12 +14,16 @@ This file contains noise reduction filters.
 3. Noise clipping method based on the
 '''
 
-def gaussian_smoothing_filter(de_images_roi,window=5,sigma=1):
+#from the paper FWHM = 4.71 ---> sigma = 4.71/sqrt(8*ln(2))
+def gaussian_smoothing_filter(de_images_roi,window=5,sigma=2):
     M = de_images_roi.shape[0]
     de_images_gauss = de_images_roi.copy()
 
-    for i in range(M):
-        de_images_gauss[i,:,:] = cv2.GaussianBlur(de_images_roi[i,:,:],(window,window),sigma)
+    if len(de_images_roi.shape)==2:
+        de_images_gauss = cv2.GaussianBlur(de_images_roi,(window,window),sigma)
+    else:
+        for i in range(M):
+            de_images_gauss[i,:,:] = cv2.GaussianBlur(de_images_roi[i,:,:],(window,window),sigma)
 
     return de_images_gauss
 
@@ -31,6 +35,36 @@ def median_smoothing_filter(de_images_roi,window=5):
         de_images_median[i,:,:] = cv2.medianBlur(de_images_roi[i,:,:],window)
 
     return de_images_median
+
+
+def correlated_noise_reduction(lo_images_roi,hi_images_roi):
+    M = lo_images_roi.shape[0]
+    w_T, w_B = 0.44, 0.72
+    # p_T, p_B = 3.5, 3.5 # for lung, 2.0 for abdomenon and soft tissue
+    p_T, p_B = 2.0, 2.0 # 2.0 for abdomenon and soft tissue
+
+    soft_images_kcnr, bone_images_kcnr = [],[]
+    for i in range(M):
+
+        #get soft and bone images using weights
+        soft_tmp = -np.log(hi_images_roi[i])+w_T*np.log(lo_images_roi[i])
+        bone_tmp = np.log(hi_images_roi[i])-w_B*np.log(lo_images_roi[i])
+
+        #apply high-pass-filter
+        soft_hps = gaussian_smoothing_filter(soft_tmp)
+        bone_hps = gaussian_smoothing_filter(bone_tmp)
+
+        bone_cnr = bone_tmp+soft_hps/p_B
+        soft_cnr = soft_tmp+bone_hps/p_T
+
+        soft = (2**16-1)*soft_cnr/(soft_cnr.max()-soft_cnr.min())
+        bone = (2**16-1)*bone_cnr/(bone_cnr.max()-bone_cnr.min())
+
+        soft_images_kcnr.append(soft)
+        bone_images_kcnr.append(bone)
+
+    # return np.array(soft_images_kcnr), np.array(bone_images_kcnr)
+    return np.array(soft_images_kcnr)
 
 import time
 import matplotlib.pyplot as plt
@@ -56,7 +90,7 @@ def noise_clipping_filter(lo_images_roi,hi_images_roi,apply_log=True):
             hi_contrast = (np.log(hi_images_roi[i,:,:])-hi_bkg)
 
             #convert zeros to one
-            lo_contrast[lo_contrast==0] =1
+            lo_contrast[lo_contrast==0] = 1
             #hi_contrast[hi_contrast==0] =1
 
             #now define ratio
@@ -89,7 +123,7 @@ def noise_clipping_filter(lo_images_roi,hi_images_roi,apply_log=True):
 
         #loot at the ratio between hi_contrast and lo_contrast
         #convert hi_pixel values min(h_pixel,0.72) and max(h_pixel,0.44)
-        # plt.plot(lo_contrast.ravel(),clip_hi_constrast.ravel(),"b.")
+        # plt.plot(lo_contrast.ravel(),clip_hi_contrast.ravel(),"b.")
         # plt.xlabel("Low contrast")
         # plt.ylabel("Low contrast")
         # plt.xlim(-0.1,0.1)
